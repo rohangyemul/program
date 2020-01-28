@@ -1,0 +1,230 @@
+#Python 3.7
+#Selenium web driver
+#MySql
+
+
+#This program will download n number of HD images from UNSPLASH .com 
+#Its connection with database is mandatory coz its very handy if download fails further u can resume.
+
+from selenium import webdriver
+#from selenium.webdriver.common.keys import Keys
+import time
+import os
+#from urllib.request import urlopen
+import urllib.request
+import mysql.connector
+#import sys
+#import requests  
+mydb = mysql.connector.connect(                                                #database connection
+  host="localhost",
+  user="root",
+  database="new_db"
+)
+mycursor = mydb.cursor()
+cwd = os.getcwd()
+abz = '\\'
+asad = 'Photos'
+path = "E:\Photos"
+#path = str(cwd)+str(abz)+str(asad)    
+fields = 'Filename,Category' 
+fileNAME = str(asad)
+fullNAME = os.path.join(path, fileNAME)
+fil = open(fullNAME+".csv",'+a')                                                #csv file to keep track of file and search keyword
+fil.write(fields)
+fil.close()
+cats=[["waterfall",3],["forest",4],["river",5],["well",6],["amusement-park",7],["garden",8],["roads",9],["sea",10],["forts",11],["hill-stations",12],["temple",13],["church",14],["caves",15],["statues",16]]
+for exe in cats:                       #cats[] has sample categories and id
+    download = 2000                    #first 2000 links to be selected
+    site = "UNSPLASH"
+    #category = sys.argv[1]
+    #imageCountStart = sys.argv[2]
+    category =exe[0]                                     #input('enter category:')
+    imageCountStart = 0                       #input('enter Image Counter Start:')
+    sub_category = 0
+    url = "https://unsplash.com/"
+    categoryCode = exe[1]
+    countryCode = 0 
+    cityCode = 0
+    sublocationCode = 0
+    driverLocation = "D:\chromedriver.exe"                    #driver
+    #imageCountStart = []
+    
+#    if not os.path.exists("%s"%category):
+#        os.makedirs("%s"%category)
+    
+    chrome_options = webdriver.ChromeOptions()
+    prefs = {'download.default_directory' : "{0}\{1}".format(cwd,category)}
+    chrome_options.add_experimental_option('prefs', prefs)
+    driver = webdriver.Chrome(chrome_options=chrome_options,executable_path=str(driverLocation))
+    #driver = webdriver.Chrome("C:\chromedriver.exe")
+    print ("\nOpening Driver")
+    driver.implicitly_wait(30)
+    driver.maximize_window()
+    
+    driver.get(url)                                                 #opening UNSPLASH
+    print ("\nOpening Url")
+    driver.implicitly_wait(30)
+    gog = driver.find_element_by_id("SEARCH_FORM_INPUT_nav-bar")
+    gog.click()
+    gog.send_keys(str(category))
+    gog.submit()
+    driver.implicitly_wait(30)
+    time.sleep(2)
+    scroll = []
+    img1 = []
+    print ("Finding Urls")
+    print ("\nOpening Url")
+    driver.implicitly_wait(30)
+    scroll = []
+    img1 = []
+    print ("Finding Urls")
+    #text = urllib3.urlopen(url).read()
+    #soup = BeautifulSoup(text)
+    ing = []
+    scrol = []
+    aa1 = []
+    #uns = "https://unsplash.com"
+    #text = urlopen(url).read()
+    #soup = BeautifulSoup(text,'lxml')
+    #data = soup.findAll('a',attrs={'class':'_2Mc8_'})
+    #for div in data:
+    #    aa= div['href']
+    #    print (aa)
+    #    aa1.append(aa)
+    #for lnk in aa1:
+    #    text1 = urlopen(uns+lnk).read()
+    #    soup1 = BeautifulSoup(text,'lxml')
+    #    data1 = soup.find('img',attrs={'class':'_2zEKz'})
+    #    for div1 in data1:
+    #        aa2= div1['src']
+    #        print (aa2)
+    #        time.sleep(2)
+        
+    
+    
+    
+    while len(img1)<download:                       #this will select number of links or if the photos in unsplash < download then it selects as much there are
+        img1=[]
+        if scrol!="Make something awesome":    
+            try:
+                scrol = driver.find_element_by_css_selector('p._1cQDt').text
+                scroll = driver.find_elements_by_class_name('_2Mc8_')
+                for linkq in scroll:
+                    hrefd = linkq.get_attribute("href")
+                    img1.append(hrefd)
+            except:     
+                driver.execute_script("window.scrollTo(0,100)")
+                driver.execute_script("window.scrollTo(0,window.document.body.scrollHeight)")
+#                time.sleep(60)
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight-1000);")
+                time.sleep(4)
+                scroll = driver.find_elements_by_class_name('_2Mc8_')
+                for linkq in scroll:
+                    hrefd = linkq.get_attribute("href")
+                    img1.append(hrefd)
+                driver.execute_script("window.scrollTo(0,window.document.body.scrollHeight)")
+                time.sleep(2)
+                print(len(img1))
+        else:
+            break            
+        
+    
+    
+    img =[]
+    b=[]
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight-1000);")
+    time.sleep(2)
+    lay1 = driver.find_element_by_css_selector('div.qztBA._2TNYr._6fYUh')
+    lay = lay1.find_elements_by_class_name('_2Mc8_')
+    print ("\nCollecting Url")
+    try:
+        for link in lay:
+            href = link.get_attribute("href")
+            img.append(href)
+            print("\n",len(img),"Urls Collected")
+    except:
+        print("Urls Not Collected")
+    
+    try:
+        mycursor.execute("SELECT file_name FROM linke WHERE category='"+str(category)+"' ORDER BY id DESC LIMIT 1")  #downloads are connected to database to check for existing files further
+        myresult = mycursor.fetchall()
+        for x in myresult:
+          print(x)
+          mint =  ''.join(x) 
+          spl = mint.split("_")
+          last = spl[-1]
+          imageCountStart = last
+          imageCountStart = format(int(imageCountStart) + 1, '0')
+                        
+    except:
+        print("Category not in database")
+        
+    print (len(img))
+    imgq = []
+    cts=[]
+    file_count = []
+    
+    try:
+        for aa in img: 
+            if len(imgq)<download:
+                try:
+                    mycursor.execute("INSERT INTO linke(site_link) VALUES ('"+str(aa)+"')")
+                    mydb.commit()
+                    driver.get(aa)
+                    driver.implicitly_wait(30)
+                    drv = driver.find_element_by_css_selector('span._20NLS._1ByhS').text
+                    print ("\nCollecting Download Url:",aa)
+                    src = driver.find_element_by_css_selector('div._2yFK-.IEpfq') #offline error
+                    src1 = src.find_elements_by_class_name("_2zEKz")
+                    for linke in src1:
+                        hrefe = linke.get_attribute("src")
+                        spt = drv.split(",")
+                        if len(spt)==3:
+                            Location = spt[2]
+                            sub_location = spt[1]
+                            place = spt[0]
+                        elif len(spt)==2:
+                            Location = spt[1]
+                            sub_location = 0
+                            place = spt[0]
+                        else:
+                            Location = 0
+                            sub_location = 0
+                            place = spt[0]
+                        print(drv)
+                        filename = str(categoryCode)+'_'+str(countryCode)+'_'+str(cityCode)+'_'+str(sublocationCode)+'_'+str(imageCountStart)+'.jpg'
+                        fullfilename = os.path.join(path, filename)
+                        fileN = str(categoryCode)+'_'+str(countryCode)+'_'+str(cityCode)+'_'+str(sublocationCode)+'_'+str(imageCountStart) 
+                        urllib.request.urlretrieve(hrefe,fullfilename)
+                        time.sleep(2)
+                        print ("File Rename :"+str(categoryCode)+'_'+str(countryCode)+'_'+str(cityCode)+'_'+str(sublocationCode)+'_'+str(imageCountStart)+'.jpg')
+                        imageCountStart = format(int(imageCountStart) + 1, '0')
+                        imgq.append(hrefe)
+                        print ("Current Download Count:",len(imgq))        
+                        status = 1
+                        rows = str(fileN)+","+str(category)
+                        fil = open(fullNAME+".csv",'+a')
+                        fil.write("\n"+rows)
+                        fil.close()
+                        try:
+                            mycursor.execute("update linke set site='"+site+"',file_name='"+str(fileN)+"',category='"+str(category)+"',sub_category='"+str(sub_category)+"',Location='"+str(Location)+"',sub_location='"+str(sub_location)+"',place='"+str(place)+"',status='"+str(status)+"' WHERE site_link='"+str(aa)+"'")
+                            mydb.commit()
+                        except Exception as ae:
+                            print(ae)                        
+                except Exception as e:
+                    status = 0
+                    mycursor.execute("update linke set status='"+str(status)+"' WHERE site_link='"+str(aa)+"'")
+                    mydb.commit()
+                    print(e)
+                    
+            else:
+                break
+    except:
+        print("Downloading Paused")
+    file_count = sum(len(files) for _, _, files in os.walk(r"{0}\{1}".format(cwd,asad)))
+    print("Downloaded %s Files"%file_count)
+
+    driver.quit()    
+
+#the format of code is informal but it does the work
+#id-site_link-filename-category-status
